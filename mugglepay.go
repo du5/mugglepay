@@ -90,10 +90,10 @@ type Callback struct {
 }
 
 type Meta struct {
-	Payment     string  `json:"payment"`
-	TotalMmount float64 `json:"total_amount"`
-	TradeNo     string  `json:"trade_no"`
-	OutTradeNo  string  `json:"out_trade_no"`
+	Payment     string `json:"payment"`
+	TotalMmount string `json:"total_amount"`
+	TradeNo     string `json:"trade_no"`
+	OutTradeNo  string `json:"out_trade_no"`
 }
 
 func (mgp *Mugglepay) CreateOrder(order *Order) (ServerOrder, error) {
