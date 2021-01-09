@@ -85,9 +85,9 @@ func (mgp *Mugglepay) CreateOrder(order *Order) (SOrder, error) {
 	if order.PriceCurrency == "" {
 		order.PriceCurrency = "CNY"
 	}
-	if order.PayCurrency == "" && mgp.CallBackUrl != "" {
+	if mgp.CallBackUrl == "" {
 		// 如果没有回调地址将无法使用法币支付，默认仅可用虚拟币
-		order.PayCurrency = "ALIPAY"
+		order.PayCurrency = ""
 	}
 
 	order.CallBackUrl = mgp.CallBackUrl
