@@ -66,6 +66,8 @@ type Invoice struct {
 	ReceiveCurrency string  `json:"receive_currency"`
 	Qrcode          string  `json:"qrcode"`
 	QrcodeLg        string  `json:"qrcodeLg"`
+	Address         string  `json:"address"`
+	Memo            string  `json:"memo"`
 }
 
 type ServerOrder struct {
@@ -185,24 +187,42 @@ func http_unmarshal(reqest *http.Request, sorder *ServerOrder) {
 
 func (invoice *Invoice) GetAlipayUrl() string {
 	var aliqr string
-	if invoice.PayCurrency == "ALIPAY" {
-		getUrl := func(longurl, key string) string {
-			var res string
-			if u, err := url.Parse(longurl); err == nil {
-				if p, err := url.ParseQuery(u.RawQuery); err == nil {
-					if val, ok := p[key]; ok {
-						res = val[0]
-					}
+	getUrl := func(longurl, key string) string {
+		var res string
+		if u, err := url.Parse(longurl); err == nil {
+			if p, err := url.ParseQuery(u.RawQuery); err == nil {
+				if val, ok := p[key]; ok {
+					res = val[0]
 				}
 			}
-			return res
 		}
+		return res
+	}
+	if invoice.PayCurrency != "" {
 		if aliqr = getUrl(invoice.Qrcode, "url"); aliqr != "" {
 			return aliqr
 		}
-		if aliqr = getUrl(invoice.QrcodeLg, "mpurl"); aliqr != "" {
-			return aliqr
+		if invoice.PayCurrency == "ALIPAY" {
+			if aliqr = getUrl(invoice.QrcodeLg, "mpurl"); aliqr != "" {
+				return aliqr
+			}
 		}
 	}
 	return aliqr
+}
+
+func (mgp *Mugglepay) CheckOut(OrderId, PayCurrency string) (ServerOrder, error) {
+	var sorder ServerOrder
+	if OrderId == "" {
+		return sorder, errors.New("order id cannot be null")
+	}
+	mgp.ApiUrl = mgp.ApiUrl + "/orders/" + OrderId + "/checkout"
+	me := make(map[string]string)
+	me["pay_currency"] = PayCurrency
+	newpatC, _ := json.Marshal(me)
+	reqest, _ := http.NewRequest("POST", mgp.ApiUrl, bytes.NewBuffer(newpatC))
+	reqest.Header.Add("token", mgp.ApplicationKey)
+	reqest.Header.Add("content-type", "application/json")
+	http_unmarshal(reqest, &sorder)
+	return sorder, nil
 }
