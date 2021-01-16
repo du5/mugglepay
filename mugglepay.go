@@ -124,7 +124,7 @@ func (mgp *Mugglepay) CreateOrder(order *Order) (ServerOrder, error) {
 	}
 
 	// 签名
-	order.Sign(mgp.ApplicationKey)
+	order.sign(mgp.ApplicationKey)
 
 	jsonOrder, _ := json.Marshal(order)
 
@@ -136,7 +136,7 @@ func (mgp *Mugglepay) CreateOrder(order *Order) (ServerOrder, error) {
 	return sorder, nil
 }
 
-func (order *Order) Sign(secret string) {
+func (order *Order) sign(secret string) {
 	q := url.Values{}
 	q.Set("merchant_order_id", order.MerchantOrderId)
 	q.Set("secret", secret)
@@ -150,7 +150,7 @@ func (mgp *Mugglepay) VerifyOrder(callback *Callback) bool {
 		return false
 	}
 	order := &Order{MerchantOrderId: callback.MerchantOrderId}
-	order.Sign(mgp.ApplicationKey)
+	order.sign(mgp.ApplicationKey)
 	// 校验签名
 	if order.Token != callback.Token {
 		return false
@@ -181,4 +181,28 @@ func http_unmarshal(reqest *http.Request, sorder *ServerOrder) {
 	body, _ := ioutil.ReadAll(responseB)
 	bytes := []byte(body)
 	_ = json.Unmarshal(bytes, &sorder)
+}
+
+func (invoice *Invoice) GetAlipayUrl() string {
+	var aliqr string
+	if invoice.PayCurrency == "ALIPAY" {
+		getUrl := func(longurl, key string) string {
+			var res string
+			if u, err := url.Parse(longurl); err == nil {
+				if p, err := url.ParseQuery(u.RawQuery); err == nil {
+					if val, ok := p[key]; ok {
+						res = val[0]
+					}
+				}
+			}
+			return res
+		}
+		if aliqr = getUrl(invoice.Qrcode, "url"); aliqr != "" {
+			return aliqr
+		}
+		if aliqr = getUrl(invoice.QrcodeLg, "mpurl"); aliqr != "" {
+			return aliqr
+		}
+	}
+	return aliqr
 }
