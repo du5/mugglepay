@@ -49,6 +49,8 @@ type Order struct {
 	Mobile          bool    `json:"mobile"`
 	Fast            bool    `json:"fast"`
 	Token           string  `json:"token"`
+	PaidAt          string  `json:"paid_at"`
+	ReceiveCurrency string  `json:"receive_currency"`
 }
 
 type Invoice struct {
@@ -100,8 +102,6 @@ type Meta struct {
 
 // 创建订单，返回 ServerOrder
 func (mgp *Mugglepay) CreateOrder(order *Order) (ServerOrder, error) {
-	mgp.ApiUrl = mgp.ApiUrl + "/orders"
-
 	var sorder ServerOrder
 	if mgp.ApplicationKey == "" {
 		return sorder, errors.New("application key cannot be null")
@@ -130,12 +130,10 @@ func (mgp *Mugglepay) CreateOrder(order *Order) (ServerOrder, error) {
 	order.sign(mgp.ApplicationKey)
 
 	jsonOrder, _ := json.Marshal(order)
-
-	reqest, _ := http.NewRequest("POST", mgp.ApiUrl, bytes.NewBuffer(jsonOrder))
-	reqest.Header.Add("token", mgp.ApplicationKey)
+	reqest, _ := http.NewRequest("POST", fmt.Sprintf("%s/orders", mgp.ApiUrl), bytes.NewBuffer(jsonOrder))
 	reqest.Header.Add("content-type", "application/json")
-	http_unmarshal(reqest, &sorder)
-
+	http_unmarshal(reqest, &sorder, mgp.ApplicationKey)
+	http_unmarshal(reqest, &sorder, mgp.ApplicationKey)
 	return sorder, nil
 }
 
@@ -171,15 +169,14 @@ func (mgp *Mugglepay) GetOrder(OrderId string) (ServerOrder, error) {
 	if OrderId == "" {
 		return sorder, errors.New("order id cannot be null")
 	}
-	mgp.ApiUrl = mgp.ApiUrl + "/orders/" + OrderId
-	reqest, _ := http.NewRequest("GET", mgp.ApiUrl, nil)
-	reqest.Header.Add("token", mgp.ApplicationKey)
-	http_unmarshal(reqest, &sorder)
+	reqest, _ := http.NewRequest("GET", fmt.Sprintf("%s/orders/%s", mgp.ApiUrl, OrderId), nil)
+	http_unmarshal(reqest, &sorder, mgp.ApplicationKey)
 	return sorder, nil
 }
 
 // 构建 CURL 请求
-func http_unmarshal(reqest *http.Request, sorder *ServerOrder) {
+func http_unmarshal(reqest *http.Request, sorder *ServerOrder, key string) {
+	reqest.Header.Add("token", key)
 	client := &http.Client{}
 	response, _ := client.Do(reqest)
 	responseB := response.Body
@@ -219,13 +216,22 @@ func (mgp *Mugglepay) CheckOut(OrderId, PayCurrency string) (ServerOrder, error)
 	if OrderId == "" {
 		return sorder, errors.New("order id cannot be null")
 	}
-	mgp.ApiUrl = mgp.ApiUrl + "/orders/" + OrderId + "/checkout"
 	me := make(map[string]string)
 	me["pay_currency"] = PayCurrency
 	newpatC, _ := json.Marshal(me)
-	reqest, _ := http.NewRequest("POST", mgp.ApiUrl, bytes.NewBuffer(newpatC))
-	reqest.Header.Add("token", mgp.ApplicationKey)
+	reqest, _ := http.NewRequest("POST", fmt.Sprintf("%s/orders/%s/checkout", mgp.ApiUrl, OrderId), bytes.NewBuffer(newpatC))
 	reqest.Header.Add("content-type", "application/json")
-	http_unmarshal(reqest, &sorder)
+	http_unmarshal(reqest, &sorder, mgp.ApplicationKey)
+	return sorder, nil
+}
+
+// 订单查询
+func (mgp *Mugglepay) GetStatus(OrderId string) (ServerOrder, error) {
+	var sorder ServerOrder
+	if OrderId == "" {
+		return sorder, errors.New("order id cannot be null")
+	}
+	reqest, _ := http.NewRequest("GET", fmt.Sprintf("%s/orders/%s/status", mgp.ApiUrl, OrderId), nil)
+	http_unmarshal(reqest, &sorder, mgp.ApplicationKey)
 	return sorder, nil
 }
