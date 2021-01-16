@@ -98,6 +98,7 @@ type Meta struct {
 	OutTradeNo  string `json:"out_trade_no"`
 }
 
+// 创建订单，返回 ServerOrder
 func (mgp *Mugglepay) CreateOrder(order *Order) (ServerOrder, error) {
 	mgp.ApiUrl = mgp.ApiUrl + "/orders"
 
@@ -138,6 +139,7 @@ func (mgp *Mugglepay) CreateOrder(order *Order) (ServerOrder, error) {
 	return sorder, nil
 }
 
+// 签名
 func (order *Order) sign(secret string) {
 	q := url.Values{}
 	q.Set("merchant_order_id", order.MerchantOrderId)
@@ -163,6 +165,7 @@ func (mgp *Mugglepay) VerifyOrder(callback *Callback) bool {
 	return false
 }
 
+// 根据网关订单编号获取 ServerOrder
 func (mgp *Mugglepay) GetOrder(OrderId string) (ServerOrder, error) {
 	var sorder ServerOrder
 	if OrderId == "" {
@@ -175,6 +178,7 @@ func (mgp *Mugglepay) GetOrder(OrderId string) (ServerOrder, error) {
 	return sorder, nil
 }
 
+// 构建 CURL 请求
 func http_unmarshal(reqest *http.Request, sorder *ServerOrder) {
 	client := &http.Client{}
 	response, _ := client.Do(reqest)
@@ -185,6 +189,7 @@ func http_unmarshal(reqest *http.Request, sorder *ServerOrder) {
 	_ = json.Unmarshal(bytes, &sorder)
 }
 
+// 获取支付宝微信支付地址
 func (invoice *Invoice) GetAlipayUrl() string {
 	var aliqr string
 	getUrl := func(longurl, key string) string {
@@ -198,19 +203,17 @@ func (invoice *Invoice) GetAlipayUrl() string {
 		}
 		return res
 	}
-	if invoice.PayCurrency != "" {
-		if aliqr = getUrl(invoice.Qrcode, "url"); aliqr != "" {
-			return aliqr
+	if invoice.PayCurrency == "ALIPAY" {
+		if aliqr = getUrl(invoice.Qrcode, "url"); aliqr == "" {
+			aliqr = getUrl(invoice.QrcodeLg, "mpurl")
 		}
-		if invoice.PayCurrency == "ALIPAY" {
-			if aliqr = getUrl(invoice.QrcodeLg, "mpurl"); aliqr != "" {
-				return aliqr
-			}
-		}
+	} else if invoice.PayCurrency == "WECHAT" {
+		aliqr = invoice.Qrcode
 	}
 	return aliqr
 }
 
+// 切换网关支付方式
 func (mgp *Mugglepay) CheckOut(OrderId, PayCurrency string) (ServerOrder, error) {
 	var sorder ServerOrder
 	if OrderId == "" {
