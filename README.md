@@ -3,7 +3,7 @@
 #### 安装
 
 ```bash
-go get github.com/du5/mugglepay@v1.0.5
+go get github.com/du5/mugglepay@v1.0.6
 ```
 
 #### 引用

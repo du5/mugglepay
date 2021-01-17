@@ -73,10 +73,31 @@ type Invoice struct {
 }
 
 type ServerOrder struct {
-	Status     int     `json:"status"`
-	Order      Order   `json:"order"`
-	PaymentUrl string  `json:"payment_url"`
-	Invoice    Invoice `json:"invoice"`
+	Status     int      `json:"status"`
+	Order      Order    `json:"order"`
+	Merchant   Merchant `json:"merchant"`
+	PaymentUrl string   `json:"payment_url"`
+	Invoice    Invoice  `json:"invoice"`
+	Permission string   `json:"permission"`
+}
+
+type Merchant struct {
+	AcceptBtc         bool                   `json:"accept_btc"`
+	AcceptUsdt        bool                   `json:"accept_usdt"`
+	AcceptBch         bool                   `json:"accept_bch"`
+	AcceptEth         bool                   `json:"accept_eth"`
+	AcceptEos         bool                   `json:"accept_eos"`
+	AcceptLtc         bool                   `json:"accept_ltc"`
+	AcceptBnb         bool                   `json:"accept_bnb"`
+	AcceptBusd        bool                   `json:"accept_busd"`
+	AcceptCusd        bool                   `json:"accept_cusd"`
+	AcceptAlipay      bool                   `json:"accept_alipay"`
+	AcceptWechat      bool                   `json:"accept_wechat"`
+	WalletUserHash    string                 `json:"wallet_user_hash"`
+	WalletUserEnabled bool                   `json:"wallet_user_enabled"`
+	EmailVerified     bool                   `json:"email_verified"`
+	Price             map[string]interface{} `json:"price"`
+	Permission        string                 `json:"permission"`
 }
 
 type Callback struct {
