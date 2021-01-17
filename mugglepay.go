@@ -256,3 +256,20 @@ func (mgp *Mugglepay) GetStatus(OrderId string) (ServerOrder, error) {
 	http_unmarshal(reqest, &sorder, mgp.ApplicationKey)
 	return sorder, nil
 }
+
+// 虚拟币: 我已支付
+func (mgp *Mugglepay) Sent(OrderId string) (ServerOrder, error) {
+	var sorder ServerOrder
+	if OrderId == "" {
+		return sorder, errors.New("order id cannot be null")
+	}
+	sorder, _ = mgp.GetOrder(OrderId)
+	if sorder.Invoice.PayCurrency == "ALIPAY" || sorder.Invoice.PayCurrency == "WECHAT" {
+		// 法币不可调用此 API
+		return sorder, errors.New("tan 90°")
+	}
+	nilmap, _ := json.Marshal(make(map[string]interface{}))
+	reqest, _ := http.NewRequest("POST", fmt.Sprintf("%s/orders/%s/sent", mgp.ApiUrl, OrderId), bytes.NewBuffer(nilmap))
+	http_unmarshal(reqest, &sorder, mgp.ApplicationKey)
+	return sorder, nil
+}
