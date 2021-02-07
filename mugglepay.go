@@ -207,9 +207,8 @@ func http_unmarshal(reqest *http.Request, sorder *ServerOrder, key string) {
 	_ = json.Unmarshal(bytes, &sorder)
 }
 
-// 获取支付宝微信支付地址
-func (invoice *Invoice) GetAlipayUrl() string {
-	var aliqr string
+// 获取支付地址
+func (sorder *ServerOrder) GetUrl() {
 	getUrl := func(longurl, key string) string {
 		var res string
 		if u, err := url.Parse(longurl); err == nil {
@@ -221,14 +220,19 @@ func (invoice *Invoice) GetAlipayUrl() string {
 		}
 		return res
 	}
-	if invoice.PayCurrency == "ALIPAY" {
-		if aliqr = getUrl(invoice.Qrcode, "url"); aliqr == "" {
-			aliqr = getUrl(invoice.QrcodeLg, "mpurl")
+	switch sorder.Invoice.PayCurrency {
+	case "ALIPAY":
+		if rurl := getUrl(sorder.Invoice.Qrcode, "url"); rurl != "" {
+			sorder.Invoice.Address = rurl
+		} else {
+			sorder.Invoice.Address = getUrl(sorder.Invoice.QrcodeLg, "mpurl")
 		}
-	} else if invoice.PayCurrency == "WECHAT" {
-		aliqr = invoice.Qrcode
+	case "WECHAT":
+		sorder.Invoice.Address = sorder.Invoice.Qrcode
+	case "EOS":
+		sorder.Invoice.Address = "mgtestflight"
+		sorder.Invoice.Memo = fmt.Sprintf("MP:%s", sorder.Invoice.OrderId)
 	}
-	return aliqr
 }
 
 // 切换网关支付方式
