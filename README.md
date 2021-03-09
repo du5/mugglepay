@@ -3,7 +3,7 @@
 #### 安装
 
 ```bash
-go get github.com/du5/mugglepay@v1.0.6
+go get github.com/du5/mugglepay@latest
 ```
 
 #### 引用
@@ -35,7 +35,7 @@ func CreateOrder(c *gin.Context) {
     })
     // 支付宝/微信扫码链接，该函数仅 PayCurrency 为 ALIPAY/WECHAT 时可返回地址
     // 其他情况下均返回加密货币地址
-    // aliqr := sorder.Invoice.GetAlipayUrl()
+    // aliqr := sorder.Invoice.GetUrl()
     c.Redirect(http.StatusFound, serverOrder.PaymentUrl)
 }
 ```
